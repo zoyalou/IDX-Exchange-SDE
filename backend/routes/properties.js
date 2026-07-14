@@ -81,4 +81,57 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/:id/openhouses', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || id.length > 50) {
+      return res.status(400).json({ error: 'Invalid listing ID' });
+    }
+
+    const [propertyRows] = await pool.query(
+      'SELECT L_ListingID FROM rets_property WHERE L_ListingID = ?',
+      [id]
+    );
+
+    if (propertyRows.length === 0) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    const [openhouseRows] = await pool.query(
+      'SELECT * FROM rets_openhouse WHERE L_ListingID = ? ORDER BY OpenHouseDate ASC, OH_StartTime ASC',
+      [id]
+    );
+
+    res.json(openhouseRows);
+  } catch (err) {
+    console.error('Error fetching open houses:', err.message);
+    res.status(500).json({ error: 'Failed to fetch open houses' });
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || id.length > 50) {
+      return res.status(400).json({ error: 'Invalid listing ID' });
+    }
+
+    const [rows] = await pool.query(
+      'SELECT * FROM rets_property WHERE L_ListingID = ?',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Error fetching property:', err.message);
+    res.status(500).json({ error: 'Failed to fetch property' });
+  }
+});
+
 module.exports = router;
